@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSharpJson", "CSharpJson\CSharpJson.csproj", "{B6B6B8D8-9F73-4ED9-9DC3-0C6B44D42D82}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSharpJson.Test", "CSharpJson.Test\CSharpJson.Test.csproj", "{4D11AC96-669F-4F2B-8B96-3E911E3A6584}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B6B6B8D8-9F73-4ED9-9DC3-0C6B44D42D82}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B6B6B8D8-9F73-4ED9-9DC3-0C6B44D42D82}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B6B6B8D8-9F73-4ED9-9DC3-0C6B44D42D82}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B6B6B8D8-9F73-4ED9-9DC3-0C6B44D42D82}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D11AC96-669F-4F2B-8B96-3E911E3A6584}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D11AC96-669F-4F2B-8B96-3E911E3A6584}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D11AC96-669F-4F2B-8B96-3E911E3A6584}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D11AC96-669F-4F2B-8B96-3E911E3A6584}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
