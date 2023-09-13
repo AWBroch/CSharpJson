@@ -12,13 +12,13 @@ public class UnitTest1
         Assert.AreEqual(type.ToString(), "Object");
     }
     [TestMethod]
-    public void JsonValueTest()
+    public void IJsonValueTest()
     {
         JsonNull nullVal = new();
         Assert.AreEqual(nullVal.Type, JsonType.Null);
         JsonNumber numberVal = new(12.5);
         Assert.AreEqual(numberVal.Type, JsonType.Number);
-        JsonValue anyVal = numberVal;
+        IJsonValue anyVal = numberVal;
         Assert.AreEqual(anyVal.Type, JsonType.Number);
         Assert.AreEqual(((JsonNumber)anyVal).Val, 12.5);
         JsonBoolean boolVal = new(true);
@@ -31,7 +31,7 @@ public class UnitTest1
         anyVal = stringVal;
         Assert.AreEqual(anyVal.Type, JsonType.String);
         Assert.AreEqual(((JsonString)anyVal).Val, "Hello, world!");
-        List<JsonValue> list = new(new JsonValue[] {
+        List<IJsonValue> list = new(new IJsonValue[] {
             new JsonNull(),
             new JsonNumber(0.0),
             new JsonString("Hey, hey, hey"),
@@ -45,7 +45,7 @@ public class UnitTest1
         anyVal = arrayVal;
         Assert.AreEqual(anyVal.Type, JsonType.Array);
         Assert.AreEqual(((JsonArray)anyVal).Val, list);
-        Dictionary<string, JsonValue> dict = new()
+        Dictionary<string, IJsonValue> dict = new()
         {
             { "thisField", new JsonString("That") },
             {"otherField", new JsonNull()},
@@ -60,5 +60,14 @@ public class UnitTest1
         anyVal = objectValue;
         Assert.AreEqual(anyVal.Type, JsonType.Object);
         Assert.AreEqual(((JsonObject)anyVal).Val, dict);
+    }
+
+    [TestMethod]
+    public void ParseTest()
+    {
+        var doc = JsonDocument.DecodeString("{\"key\":\"value\"}");
+        Assert.AreEqual(doc.Root, new JsonObject(new Dictionary<string, IJsonValue> {
+            {"key", new JsonString("value")}
+        }));
     }
 }

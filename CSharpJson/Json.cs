@@ -1,4 +1,6 @@
-﻿namespace CSharpJson;
+﻿using System.Text;
+
+namespace CSharpJson;
 
 public enum JsonType
 {
@@ -10,21 +12,21 @@ public enum JsonType
   Null
 };
 
-public interface JsonValue
+public interface IJsonValue
 {
   public JsonType Type { get; }
 }
 
-public class JsonNull : JsonValue
+public struct JsonNull : IJsonValue
 {
-  public JsonType Type => JsonType.Null;
+  public readonly JsonType Type => JsonType.Null;
   public JsonNull()
   { }
 }
 
-public class JsonBoolean : JsonValue
+public struct JsonBoolean : IJsonValue
 {
-  public JsonType Type => JsonType.Boolean;
+  public readonly JsonType Type => JsonType.Boolean;
   public bool Val { get; set; }
   public JsonBoolean(bool val)
   {
@@ -32,9 +34,9 @@ public class JsonBoolean : JsonValue
   }
 }
 
-public class JsonNumber : JsonValue
+public struct JsonNumber : IJsonValue
 {
-  public JsonType Type => JsonType.Number;
+  public readonly JsonType Type => JsonType.Number;
   public double Val { get; set; }
   public JsonNumber(double val)
   {
@@ -42,9 +44,9 @@ public class JsonNumber : JsonValue
   }
 }
 
-public class JsonString : JsonValue
+public struct JsonString : IJsonValue
 {
-  public JsonType Type => JsonType.String;
+  public readonly JsonType Type => JsonType.String;
   public string Val { get; set; }
   public JsonString(string val)
   {
@@ -52,27 +54,42 @@ public class JsonString : JsonValue
   }
 }
 
-public class JsonArray : JsonValue
+public struct JsonArray : IJsonValue
 {
-  public JsonType Type => JsonType.Array;
-  public List<JsonValue> Val { get; set; }
-  public JsonArray(List<JsonValue> val)
+  public readonly JsonType Type => JsonType.Array;
+  public List<IJsonValue> Val { get; set; }
+  public JsonArray(List<IJsonValue> val)
   {
     Val = val;
   }
 }
 
-public class JsonObject : JsonValue
+public struct JsonObject : IJsonValue
 {
-  public JsonType Type => JsonType.Object;
-  public Dictionary<string, JsonValue> Val { get; set; }
-  public JsonObject(Dictionary<string, JsonValue> dict)
+  public readonly JsonType Type => JsonType.Object;
+  public Dictionary<string, IJsonValue> Val { get; set; }
+  public JsonObject(Dictionary<string, IJsonValue> dict)
   {
     Val = dict;
   }
 }
 
-public class JsonDecode
+public class JsonDocument
 {
-
+  public IJsonValue Root { get; set; }
+  public JsonDocument()
+  {
+    Root = new JsonNull();
+  }
+  public static JsonDocument DecodeString(string str)
+  {
+    return DecodeRaw(Encoding.UTF8.GetBytes(str));
+  }
+  public static JsonDocument DecodeRaw(byte[] bytes)
+  {
+    JsonDocument doc = new();
+    ByteIterator iter = new(bytes);
+    var parser = new Parser(iter);
+    return doc;
+  }
 }
