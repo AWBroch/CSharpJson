@@ -34,7 +34,7 @@ internal class Parser
 
   public IJsonValue ParseNext(ParseState state)
   {
-    iter.IgnoreWhitespace();
+    IgnoreWhitespace();
     byte? c = iter[0];
     if (c.HasValue)
     {
@@ -45,7 +45,7 @@ internal class Parser
           if (IsString(d))
             return new JsonString(ReadString());
           if (IsNumber(d))
-            return new JsonNumber(0);
+            return new JsonNumber(ReadNumber());
           if (IsArray(d))
             return new JsonArray(new(Array.Empty<IJsonValue>()));
           if (IsObject(d))
@@ -96,12 +96,25 @@ internal class Parser
     return (c >= '0' && c <= '9') || c == '-';
   }
 
+  static bool IsWhitespace(byte b)
+  {
+    return b == 0x0020 || b == 0x000A || b == 0x000D || b == 0x0009;
+  }
+
+  public void IgnoreWhitespace()
+  {
+    while (iter[0].HasValue && IsWhitespace(iter[0]!.Value))
+    {
+      iter.Index++;
+    }
+  }
+
   string ReadString()
   {
     if (iter.Next() != (byte)'"')
       throw new JsonParseError("Expected string start");
     MemoryStream s = new();
-    while (iter[0] != null)
+    while (iter[0] is not null)
     {
       switch (iter[0])
       {
@@ -122,7 +135,7 @@ internal class Parser
 
   byte[] Escape()
   {
-    MemoryStream s = new();
+    MemoryStream s = new(4);
     var escape = iter.Next();
     if (!escape.HasValue)
       throw new JsonParseError("Unexpected end of input. Expected escape code");
@@ -152,5 +165,31 @@ internal class Parser
         throw new JsonParseError($"Expected valid escape character, found `{(char)escape.Value}`");
     }
     return s.ToArray();
+  }
+
+  double ReadNumber()
+  {
+    var s = new MemoryStream(8);
+    try
+    {
+      byte? i = iter[0];
+      while (i is not null and
+      ((>= (byte)'0' and <= (byte)'9')
+        or (byte)'-'
+        or (byte)'+'
+        or (byte)'.'
+        or (byte)'E'
+        or (byte)'e'))
+      {
+        s.WriteByte(i.Value);
+        iter.Index++;
+        i = iter[0];
+      }
+      return Convert.ToDouble(Encoding.UTF8.GetString(s.ToArray()));
+    }
+    catch
+    {
+      throw new JsonParseError($"Expected number. Found `{Encoding.UTF8.GetString(s.ToArray())}`");
+    }
   }
 }

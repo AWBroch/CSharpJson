@@ -63,17 +63,4 @@ internal class ByteIterator
   {
     return Data.Length - Index;
   }
-
-  public void IgnoreWhitespace()
-  {
-    while (IsWhitespace(Data[Index]))
-    {
-      Index++;
-    }
-  }
-
-  static bool IsWhitespace(byte b)
-  {
-    return b == 0x0020 || b == 0x000A || b == 0x000D || b == 0x0009;
-  }
 }

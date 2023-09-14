@@ -4,32 +4,24 @@ namespace CSharpJson.Test;
 public class UnitTest1
 {
     [TestMethod]
-    public void JsonTypeTest()
-    {
-        JsonType type = JsonType.Null;
-        Assert.AreEqual("Null", type.ToString());
-        type = JsonType.Object;
-        Assert.AreEqual("Object", type.ToString());
-    }
-    [TestMethod]
     public void IJsonValueTest()
     {
         JsonNull nullVal = new();
-        Assert.AreEqual(JsonType.Null, nullVal.Type);
+        Assert.AreEqual("null", nullVal.ToJson());
         JsonNumber numberVal = new(12.5);
-        Assert.AreEqual(JsonType.Number, numberVal.Type);
+        Assert.AreEqual("12.5", numberVal.ToJson());
         IJsonValue anyVal = numberVal;
-        Assert.AreEqual(JsonType.Number, anyVal.Type);
+        Assert.IsTrue(anyVal is JsonNumber);
         Assert.AreEqual(12.5, ((JsonNumber)anyVal).Val);
         JsonBoolean boolVal = new(true);
-        Assert.AreEqual(JsonType.Boolean, boolVal.Type);
+        Assert.AreEqual("true", boolVal.ToJson());
         anyVal = boolVal;
-        Assert.AreEqual(JsonType.Boolean, anyVal.Type);
+        Assert.IsTrue(anyVal is JsonBoolean);
         Assert.AreEqual(true, ((JsonBoolean)anyVal).Val);
         JsonString stringVal = new("Hello, world!");
-        Assert.AreEqual(JsonType.String, stringVal.Type);
+        Assert.AreEqual("\"Hello, world!\"", stringVal.ToJson());
         anyVal = stringVal;
-        Assert.AreEqual(JsonType.String, anyVal.Type);
+        Assert.IsTrue(anyVal is JsonString);
         Assert.AreEqual("Hello, world!", ((JsonString)anyVal).Val);
         List<IJsonValue> list = new(new IJsonValue[] {
             new JsonNull(),
@@ -41,24 +33,24 @@ public class UnitTest1
             new JsonString("Testing, one two three")
         });
         JsonArray arrayVal = new(list);
-        Assert.AreEqual(JsonType.Array, arrayVal.Type);
+        Assert.AreEqual("[null,0,\"Hey, hey, hey\",true,false,null,\"Testing, one two three\"]", arrayVal.ToJson());
         anyVal = arrayVal;
-        Assert.AreEqual(JsonType.Array, anyVal.Type);
+        Assert.IsTrue(anyVal is JsonArray);
         Assert.AreEqual(list, ((JsonArray)anyVal).Val);
         Dictionary<string, IJsonValue> dict = new()
         {
             { "thisField", new JsonString("That") },
             {"otherField", new JsonNull()},
-            {"artist", new JsonString("Coutning Crows")},
+            {"artist", new JsonString("Counting Crows")},
             {"song", new JsonString("Mr. Jones")},
             {"album", new JsonString("August and Everything After")},
             {"year", new JsonNumber(1993)},
             {"awesome", new JsonBoolean(true)}
         };
         JsonObject objectValue = new(dict);
-        Assert.AreEqual(JsonType.Object, objectValue.Type);
+        Assert.AreEqual("{\"thisField\":\"That\",\"otherField\":null,\"artist\":\"Counting Crows\",\"song\":\"Mr. Jones\",\"album\":\"August and Everything After\",\"year\":1993,\"awesome\":true}", objectValue.ToJson());
         anyVal = objectValue;
-        Assert.AreEqual(JsonType.Object, anyVal.Type);
+        Assert.IsTrue(anyVal is JsonObject);
         Assert.AreEqual(dict, ((JsonObject)anyVal).Val);
     }
 
@@ -81,5 +73,20 @@ public class UnitTest1
         var s = "\"string, \\\"string\\\", string—🎸\\uD83E\\uDD95\\u3ED8\\u0003\\f\"";
         doc = JsonDocument.DecodeString(s);
         Assert.AreEqual("string, \"string\", string—🎸🦕㻘\x03\x0C", ((JsonString)doc.Root).Val);
+    }
+
+    [TestMethod]
+    public void ParseNumber()
+    {
+        var doc = JsonDocument.DecodeString("12");
+        Assert.AreEqual(12.0, ((JsonNumber)doc.Root).Val);
+        doc = JsonDocument.DecodeString("3.1415926535");
+        Assert.AreEqual(3.1415926535, ((JsonNumber)doc.Root).Val);
+        doc = JsonDocument.DecodeString("5.2e+50");
+        Assert.AreEqual(5.2e+50, ((JsonNumber)doc.Root).Val);
+        doc = JsonDocument.DecodeString("-12.24");
+        Assert.AreEqual(-12.24, ((JsonNumber)doc.Root).Val);
+        doc = JsonDocument.DecodeString("4.2e-100");
+        Assert.AreEqual(4.2e-100, ((JsonNumber)doc.Root).Val);
     }
 }
