@@ -1,8 +1,44 @@
+using System.Text;
+
 namespace CSharpJson.Test;
 
 [TestClass]
 public class UnitTest1
 {
+    [TestMethod]
+    public void PrettyPrint()
+    {
+        Assert.AreEqual(@"{
+    ""key"": ""value"",
+    ""otherKey"": ""otherValue"",
+    ""array"": [
+        {
+            ""key"": true,
+            ""more"": null
+        },
+        [
+            true,
+            12,
+            47
+        ]
+    ]
+}",
+        new JsonObject(new Dictionary<string, IJsonValue> {
+            {"key", new JsonString("value")},
+            {"otherKey", new JsonString("otherValue")},
+            {"array", new JsonArray(new List<IJsonValue> {
+                new JsonObject(new Dictionary<string, IJsonValue> {
+                    {"key", new JsonBoolean(true)},
+                    {"more", new JsonNull()}
+                }),
+                new JsonArray(new List<IJsonValue> {
+                    new JsonBoolean(true),
+                    new JsonNumber(12),
+                    new JsonNumber(47)
+                })
+            })}
+        }).ToJsonPretty());
+    }
     [TestMethod]
     public void IJsonValueTest()
     {
@@ -88,5 +124,60 @@ public class UnitTest1
         Assert.AreEqual(-12.24, ((JsonNumber)doc.Root).Val);
         doc = JsonDocument.DecodeString("4.2e-100");
         Assert.AreEqual(4.2e-100, ((JsonNumber)doc.Root).Val);
+    }
+
+    [TestMethod]
+    public void ParseArray()
+    {
+        var doc = JsonDocument.DecodeString("[12,13,14]");
+        Assert.IsTrue(new List<IJsonValue> {
+            new JsonNumber(12),
+            new JsonNumber(13),
+            new JsonNumber(14)
+        }.SequenceEqual(((JsonArray)doc.Root).Val));
+        var s = new StringBuilder(string.Concat(Enumerable.Repeat("[5   ,\n\n", 300)));
+        s.Append("[\"algo muy interesante. Ay si, ya tu sabes. ¡Imagínate!\", 3.1415926535, 5.2e+50, \"\",null,true,false,[],[],[],[[[[[[[[[[[[[[]]]]]]]]]]]]]]]");
+        s.Append(string.Concat(Enumerable.Repeat(']', 300)));
+        doc = JsonDocument.DecodeString(s.ToString());
+        Assert.IsTrue(doc.Root is JsonArray);
+    }
+
+    [TestMethod]
+    public void ParseObject()
+    {
+        var doc = JsonDocument.DecodeString("{\n\t\"name\": \"Steve\",\n\t\"nickname\": \"Cementhead\"\n}");
+        Assert.IsTrue(doc.Root is JsonObject);
+        JsonObject obj = (JsonObject)doc.Root;
+        Assert.AreEqual("Steve", ((JsonString)obj.Val["name"]).Val);
+        Assert.AreEqual("Cementhead", ((JsonString)obj.Val["nickname"]).Val);
+        doc = JsonDocument.DecodeString(@"{
+            ""stuff"": [
+                ""string"",
+                true,
+                false,
+                null,
+                {
+                    ""moreStuff"": true,
+                    ""really"": ""yes"",
+                    ""theStuff"": [
+                        3,
+                        0.1,
+                        0.04,
+                        0.001,
+                        0.0005,
+                        0.00009
+                    ]
+                }
+            ]
+        }");
+        Assert.IsTrue(doc.Root is JsonObject);
+        obj = (JsonObject)doc.Root;
+        Assert.IsTrue(obj["stuff"] is JsonArray);
+        var arr = (JsonArray)obj["stuff"];
+        Assert.IsTrue(arr.Val[4] is JsonObject);
+        obj = (JsonObject)arr.Val[4];
+        Assert.AreEqual("yes", ((JsonString)obj["really"]).Val);
+        Assert.IsInstanceOfType(obj["theStuff"], typeof(JsonArray));
+        Assert.AreEqual(6, ((JsonArray)obj["theStuff"]).Val.Count);
     }
 }

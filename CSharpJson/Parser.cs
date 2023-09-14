@@ -1,13 +1,8 @@
+using System.Diagnostics;
 using System.Text;
 
 namespace CSharpJson;
 
-enum ParseState
-{
-  Value,
-  Object,
-  Array
-}
 
 public class JsonParseError : Exception
 {
@@ -22,6 +17,7 @@ public class JsonParseError : Exception
 internal class Parser
 {
   ByteIterator iter;
+  int depth = 0;
 
   static readonly byte[] True = Encoding.UTF8.GetBytes("true");
   static readonly byte[] False = Encoding.UTF8.GetBytes("false");
@@ -32,47 +28,99 @@ internal class Parser
     iter = itr;
   }
 
-  public IJsonValue ParseNext(ParseState state)
+  public IJsonValue ParseNext()
+  {
+
+    depth++;
+    if (depth >= 350)
+      throw new JsonParseError("Too much recursion");
+    var ret = ParseNextInner();
+    depth--;
+    return ret;
+  }
+
+  IJsonValue ParseNextInner()
   {
     IgnoreWhitespace();
     byte? c = iter[0];
     if (c.HasValue)
     {
       byte d = c.Value;
-      switch (state)
+      if (IsString(d))
+        return new JsonString(ReadString());
+      if (IsNumber(d))
+        return new JsonNumber(ReadNumber());
+      if (IsArray(d))
       {
-        case ParseState.Value:
-          if (IsString(d))
-            return new JsonString(ReadString());
-          if (IsNumber(d))
-            return new JsonNumber(ReadNumber());
-          if (IsArray(d))
-            return new JsonArray(new(Array.Empty<IJsonValue>()));
-          if (IsObject(d))
-            return new JsonObject(new());
-          var next4 = iter[0..4] ?? throw new JsonParseError("Unexpected end of input");
-          if (next4.SequenceEqual(True))
+        List<IJsonValue> l = new();
+        iter.Index++;
+        while (iter[0] != (byte)']')
+        {
+          IgnoreWhitespace();
+          l.Add(ParseNext());
+          IgnoreWhitespace();
+          switch (iter[0])
           {
-            iter.Index += 4;
-            return new JsonBoolean(true);
+            case (byte)',':
+              iter.Index++;
+              continue;
+            case (byte)']':
+              break;
+            default:
+              throw new JsonParseError($"Unexpected character `{(char?)iter[0]}`. Expected `,` or end of array `]`");
           }
-          if (next4.SequenceEqual(Null))
-          {
-            iter.Index += 4;
-            return new JsonNull();
-          }
-          var next5 = iter[0..5] ?? throw new JsonParseError("Unexpected end of input");
-          if (next5.SequenceEqual(False))
-          {
-            iter.Index += 5;
-            return new JsonBoolean(false);
-          }
-          throw new JsonParseError($"Expected next value, found `{Encoding.UTF8.GetString(iter[0..]!)}`");
-        case ParseState.Object:
-          break;
-        case ParseState.Array:
-          break;
+        }
+        iter.Index++; // To skip closing bracket
+        return new JsonArray(l);
       }
+      if (IsObject(d))
+      {
+        var dict = new Dictionary<string, IJsonValue>();
+        iter.Index++;
+        while (iter[0] != (byte)'}')
+        {
+          IgnoreWhitespace();
+          string k = ReadString();
+          IgnoreWhitespace();
+          if (iter.Next() != (byte)':')
+            throw new JsonParseError("Expected colon after object key");
+          // IgnoreWhitespace called at beginning of ParseNext
+          var v = ParseNext();
+          IgnoreWhitespace();
+          dict.Add(k, v);
+          switch (iter[0])
+          {
+            case (byte)',':
+              iter.Index++;
+              continue;
+            case (byte)'}':
+              break;
+            default:
+              throw new JsonParseError($"Unexpected character `{(char?)iter[0]}`. Expected `,` or end of object `}}`");
+          }
+        }
+        iter.Index++; // To skip closing brace
+        return new JsonObject(dict);
+      }
+      var next4 = iter[0..4] ?? throw new JsonParseError("Unexpected end of input");
+      if (next4.SequenceEqual(True))
+      {
+        iter.Index += 4;
+        return new JsonBoolean(true);
+      }
+      if (next4.SequenceEqual(Null))
+      {
+        iter.Index += 4;
+        return new JsonNull();
+      }
+      var next5 = iter[0..5] ?? throw new JsonParseError("Unexpected end of input");
+      if (next5.SequenceEqual(False))
+      {
+        iter.Index += 5;
+        return new JsonBoolean(false);
+      }
+      throw new JsonParseError($"Expected next value, found `{Encoding.UTF8.GetString(iter[0..]!)}`");
+
     }
     return new JsonNull();
   }

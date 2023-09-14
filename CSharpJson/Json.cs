@@ -4,7 +4,11 @@ namespace CSharpJson;
 
 public interface IJsonValue
 {
-  string ToJson();
+  internal string ToJson();
+  internal virtual string ToJsonPretty()
+  {
+    return ToJson();
+  }
 }
 
 public struct JsonNull : IJsonValue
@@ -26,7 +30,7 @@ public struct JsonBoolean : IJsonValue
 
 public struct JsonNumber : IJsonValue
 {
-  public string ToJson() => $"{Val}";
+  public string ToJson() => Val.ToString();
   public double Val { get; set; }
   public JsonNumber(double val)
   {
@@ -54,6 +58,12 @@ public struct JsonString : IJsonValue
 public struct JsonArray : IJsonValue
 {
   public string ToJson() => $"[{string.Join(',', Val.Select(v => v.ToJson()))}]";
+  public string ToJsonPretty()
+  {
+    return @$"[
+    {string.Join(",\n    ", Val.Select(v => v.ToJsonPretty().Replace("\n", "\n    ")))}
+]";
+  }
   public List<IJsonValue> Val { get; set; }
   public JsonArray(List<IJsonValue> val)
   {
@@ -63,11 +73,33 @@ public struct JsonArray : IJsonValue
 
 public struct JsonObject : IJsonValue
 {
-  public string ToJson() => $"{{{string.Join(',', Val.ToArray().Select(kv => $"{JsonString.StringToJson(kv.Key)}:{kv.Value.ToJson()}"))}}}";
+  public string ToJson() => $"{{{string.Join(',',
+     Val.ToArray()
+     .Select(kv => $"{JsonString.StringToJson(kv.Key)}:{kv.Value.ToJson()}"))}}}";
+  public string ToJsonPretty()
+  {
+    return @$"{{
+    {string.Join(",\n    ",
+     Val.ToArray()
+     .Select(kv => $"{JsonString.StringToJson(kv.Key)}: {kv.Value.ToJsonPretty().Replace("\n", "\n    ")}"))}
+}}";
+  }
   public Dictionary<string, IJsonValue> Val { get; set; }
   public JsonObject(Dictionary<string, IJsonValue> dict)
   {
     Val = dict;
+  }
+
+  public IJsonValue this[string idx]
+  {
+    get
+    {
+      return Val[idx];
+    }
+    set
+    {
+      Val[idx] = value;
+    }
   }
 }
 
@@ -87,7 +119,7 @@ public class JsonDocument
     JsonDocument doc = new();
     ByteIterator iter = new(bytes);
     var parser = new Parser(iter);
-    doc.Root = parser.ParseNext(ParseState.Value);
+    doc.Root = parser.ParseNext();
     return doc;
   }
 }
