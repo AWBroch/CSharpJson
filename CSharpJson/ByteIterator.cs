@@ -30,8 +30,15 @@ internal class ByteIterator
   {
     get
     {
-      var offset = index.GetOffset(RemainingLength());
-      return offset < Data.Length ? Data[offset] : null;
+      try
+      {
+        var offset = index.GetOffset(RemainingLength());
+        return offset < Data.Length ? Data[offset + Index] : null;
+      }
+      catch
+      {
+        return null;
+      }
     }
   }
 
@@ -39,9 +46,16 @@ internal class ByteIterator
   {
     get
     {
-      (int offset, int length) = index.GetOffsetAndLength(RemainingLength());
-      offset += RemainingLength();
-      return offset >= 0 && (offset + length) < Data.Length ? Data[new Range(offset, offset + length)] : null;
+      try
+      {
+        (int offset, int length) = index.GetOffsetAndLength(RemainingLength());
+        offset += Index;
+        return offset >= 0 && (offset + length) <= Data.Length ? Data[new Range(offset, offset + length)] : null;
+      }
+      catch
+      {
+        return null;
+      }
     }
   }
 

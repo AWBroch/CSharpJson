@@ -51,18 +51,18 @@ internal class Parser
           if (IsObject(d))
             return new JsonObject(new());
           var next4 = iter[0..4] ?? throw new JsonParseError("Unexpected end of input");
-          if (next4 == True)
+          if (next4.SequenceEqual(True))
           {
             iter.Index += 4;
             return new JsonBoolean(true);
           }
-          if (next4 == Null)
+          if (next4.SequenceEqual(Null))
           {
             iter.Index += 4;
             return new JsonNull();
           }
           var next5 = iter[0..5] ?? throw new JsonParseError("Unexpected end of input");
-          if (next5 == False)
+          if (next5.SequenceEqual(False))
           {
             iter.Index += 5;
             return new JsonBoolean(false);

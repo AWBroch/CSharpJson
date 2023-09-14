@@ -90,6 +90,7 @@ public class JsonDocument
     JsonDocument doc = new();
     ByteIterator iter = new(bytes);
     var parser = new Parser(iter);
+    doc.Root = parser.ParseNext(ParseState.Value);
     return doc;
   }
 }
