@@ -17,8 +17,8 @@ public class UnitTest1
             ""more"": null
         },
         [
-            true,
-            12,
+            false,
+            12.24,
             47
         ]
     ]
@@ -32,8 +32,8 @@ public class UnitTest1
                     {"more", new JsonNull()}
                 }),
                 new JsonArray(new List<IJsonValue> {
-                    new JsonBoolean(true),
-                    new JsonNumber(12),
+                    new JsonBoolean(false),
+                    new JsonNumber(12.24),
                     new JsonNumber(47)
                 })
             })}
@@ -145,7 +145,7 @@ public class UnitTest1
     [TestMethod]
     public void ParseObject()
     {
-        var doc = JsonDocument.DecodeString("{\n\t\"name\": \"Steve\",\n\t\"nickname\": \"Cementhead\"\n}");
+        var doc = JsonDocument.DecodeString("{\r\n\t\"name\": \"Steve\",\r\n\t\"nickname\": \"Cementhead\"\r\n}");
         Assert.IsTrue(doc.Root is JsonObject);
         JsonObject obj = (JsonObject)doc.Root;
         Assert.AreEqual("Steve", ((JsonString)obj.Val["name"]).Val);

@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSharpJson", "CSharpJson\CS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSharpJson.Test", "CSharpJson.Test\CSharpJson.Test.csproj", "{4D11AC96-669F-4F2B-8B96-3E911E3A6584}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSharpJson.Bench", "CSharpJson.Bench\CSharpJson.Bench.csproj", "{22F9451B-C514-4FA8-9CE6-8DCD13F3DD6D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{4D11AC96-669F-4F2B-8B96-3E911E3A6584}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4D11AC96-669F-4F2B-8B96-3E911E3A6584}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4D11AC96-669F-4F2B-8B96-3E911E3A6584}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22F9451B-C514-4FA8-9CE6-8DCD13F3DD6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22F9451B-C514-4FA8-9CE6-8DCD13F3DD6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22F9451B-C514-4FA8-9CE6-8DCD13F3DD6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22F9451B-C514-4FA8-9CE6-8DCD13F3DD6D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
