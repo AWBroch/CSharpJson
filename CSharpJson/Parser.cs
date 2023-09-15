@@ -49,6 +49,7 @@ internal class Parser
       (byte)'"' => new JsonString(ReadString()),
       (byte)'{' => new JsonObject(ReadObject()),
       (byte)'[' => new JsonArray(ReadArray()),
+      null => new JsonNull(),
       _ => c.HasValue && IsNumber(c.Value) ? new JsonNumber(ReadNumber()) : ReadAtom(),
     };
   }

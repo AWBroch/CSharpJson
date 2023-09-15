@@ -3,3 +3,6 @@ obj
 TestResults
 .DS_Store
 sign
+
+# Benchmark results
+CSharpJson.Bench_*
