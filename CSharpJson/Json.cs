@@ -117,8 +117,14 @@ public class JsonDocument
   public static JsonDocument DecodeRaw(byte[] bytes)
   {
     JsonDocument doc = new();
-    ByteIterator iter = new(bytes);
-    var parser = new Parser(iter);
+    var parser = new Parser(bytes);
+    doc.Root = parser.ParseNext();
+    return doc;
+  }
+  public static JsonDocument DecodeRaw(MemoryStream mem)
+  {
+    JsonDocument doc = new();
+    var parser = new Parser(mem);
     doc.Root = parser.ParseNext();
     return doc;
   }

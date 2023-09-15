@@ -15,16 +15,20 @@ public class JsonParseError : Exception
 
 internal class Parser
 {
-  ByteIterator iter;
+  MemoryStream mem;
   int depth = 0;
 
   static readonly byte[] True = Encoding.UTF8.GetBytes("true");
   static readonly byte[] False = Encoding.UTF8.GetBytes("false");
   static readonly byte[] Null = Encoding.UTF8.GetBytes("null");
 
-  public Parser(ByteIterator itr)
+  public Parser(byte[] bytes)
   {
-    iter = itr;
+    mem = new MemoryStream(bytes);
+  }
+  public Parser(MemoryStream memStream)
+  {
+    mem = memStream;
   }
 
   public IJsonValue ParseNext()
@@ -41,7 +45,7 @@ internal class Parser
   IJsonValue ParseNextInner()
   {
     IgnoreWhitespace();
-    byte? c = iter[0];
+    byte? c = PeekByte();
     if (c.HasValue)
     {
       byte d = c.Value;
@@ -52,76 +56,101 @@ internal class Parser
       if (IsArray(d))
       {
         List<IJsonValue> l = new();
-        iter.Index++;
-        while (iter[0] != (byte)']')
+        Ignore();
+        while (PeekByte() != (byte)']')
         {
           IgnoreWhitespace();
           l.Add(ParseNext());
           IgnoreWhitespace();
-          switch (iter[0])
+          byte? next = PeekByte();
+          switch (next)
           {
             case (byte)',':
-              iter.Index++;
+              Ignore();
               continue;
             case (byte)']':
               break;
             default:
-              throw new JsonParseError($"Unexpected character `{(char?)iter[0]}`. Expected `,` or end of array `]`");
+              throw new JsonParseError($"Unexpected character `{(char?)next}`. Expected `,` or end of array `]`");
           }
         }
-        iter.Index++; // To skip closing bracket
+        Ignore(); // To skip closing bracket
         return new JsonArray(l);
       }
       if (IsObject(d))
       {
         var dict = new Dictionary<string, IJsonValue>();
-        iter.Index++;
-        while (iter[0] != (byte)'}')
+        Ignore();
+        while (PeekByte() != (byte)'}')
         {
           IgnoreWhitespace();
           string k = ReadString();
           IgnoreWhitespace();
-          if (iter.Next() != (byte)':')
-            throw new JsonParseError("Expected colon after object key");
+          byte? n;
+          if ((n = NextByte()) != (byte)':')
+            throw new JsonParseError($"Expected colon after object key, found `{(char?)n}`");
           // IgnoreWhitespace called at beginning of ParseNext
           var v = ParseNext();
           IgnoreWhitespace();
           dict.Add(k, v);
-          switch (iter[0])
+          switch (n = PeekByte())
           {
             case (byte)',':
-              iter.Index++;
+              Ignore();
               continue;
             case (byte)'}':
               break;
             default:
-              throw new JsonParseError($"Unexpected character `{(char?)iter[0]}`. Expected `,` or end of object `}}`");
+              throw new JsonParseError($"Unexpected character `{(char?)n}`. Expected `,` or end of object `}}`");
           }
         }
-        iter.Index++; // To skip closing brace
+        Ignore(); // To skip closing brace
         return new JsonObject(dict);
       }
-      var next4 = iter[0..4] ?? throw new JsonParseError("Unexpected end of input");
-      if (next4.SequenceEqual(True))
+      var next5 = new byte[5];
+      mem.ReadExactly(next5, 0, 4);
+      if (next5[0..4].SequenceEqual(True))
       {
-        iter.Index += 4;
         return new JsonBoolean(true);
       }
-      if (next4.SequenceEqual(Null))
+      if (next5[0..4].SequenceEqual(Null))
       {
-        iter.Index += 4;
         return new JsonNull();
       }
-      var next5 = iter[0..5] ?? throw new JsonParseError("Unexpected end of input");
+      next5[4] = NextByte() ?? throw new JsonParseError("Unexpected end of input. Expected `false`");
       if (next5.SequenceEqual(False))
       {
-        iter.Index += 5;
         return new JsonBoolean(false);
       }
-      throw new JsonParseError($"Expected next value, found `{Encoding.UTF8.GetString(iter[0..]!)}`");
-
+      throw new JsonParseError($"Expected next value, found `{Encoding.UTF8.GetString(mem.ToArray())}`");
     }
+
     return new JsonNull();
+  }
+
+  byte? NextByte()
+  {
+    int b = mem.ReadByte();
+    return b == -1 ? null : (byte)b;
+  }
+
+  byte? PeekByte()
+  {
+    int b = mem.ReadByte();
+    if (b == -1)
+    {
+      return null;
+    }
+    else
+    {
+      mem.Seek(-1, SeekOrigin.Current);
+      return (byte)b;
+    }
+  }
+
+  void Ignore(int bytes = 1)
+  {
+    mem.Seek(bytes, SeekOrigin.Current);
   }
 
   static bool IsString(byte c)
@@ -150,30 +179,30 @@ internal class Parser
 
   public void IgnoreWhitespace()
   {
-    while (iter[0].HasValue && IsWhitespace(iter[0]!.Value))
+    byte? c;
+    while ((c = PeekByte()) is not null && IsWhitespace(c!.Value))
     {
-      iter.Index++;
+      Ignore();
     }
   }
 
   string ReadString()
   {
-    if (iter.Next() != (byte)'"')
+    if (NextByte() != (byte)'"')
       throw new JsonParseError("Expected string start");
     MemoryStream s = new();
-    while (iter[0] is not null)
+    byte? c;
+    while ((c = NextByte()) is not null)
     {
-      switch (iter[0])
+      switch (c)
       {
         case (byte)'"':
-          iter.Index++;
           return Encoding.UTF8.GetString(s.ToArray());
         case (byte)'\\':
-          iter.Index++;
           s.Write(Escape());
           break;
         default:
-          s.WriteByte(iter.Next()!.Value);
+          s.WriteByte(c.Value);
           break;
       }
     }
@@ -183,7 +212,7 @@ internal class Parser
   byte[] Escape()
   {
     MemoryStream s = new(4);
-    var escape = iter.Next();
+    var escape = NextByte();
     if (!escape.HasValue)
       throw new JsonParseError("Unexpected end of input. Expected escape code");
     switch (escape.Value)
@@ -198,13 +227,19 @@ internal class Parser
       case (byte)'r': s.WriteByte(0x0D); break;
       case (byte)'t': s.WriteByte(0x09); break;
       case (byte)'u':
-        var code = iter.NextRange(4) ?? throw new JsonParseError("Unexpected end of input. Expected valid unicode escape");
+        var code = new byte[4];
+        mem.ReadExactly(code);
         char[] cs = new char[] { (char)Convert.ToUInt32(Encoding.UTF8.GetString(code), 16) };
-        if (iter[0] == (byte)'\\' && iter[1] == (byte)'u')
+        if (NextByte() == (byte)'\\' && PeekByte() == (byte)'u')
         {
-          iter.Index += 2;
-          var secondCode = iter.NextRange(4) ?? throw new JsonParseError("Unexpected end of input. Expected valid unicode escape");
+          Ignore();
+          var secondCode = new byte[4];
+          mem.ReadExactly(secondCode);
           cs = new char[] { cs[0], (char)Convert.ToUInt32(Encoding.UTF8.GetString(secondCode), 16) };
+        }
+        else
+        {
+          Ignore(-1);
         }
         s.Write(Encoding.UTF8.GetBytes(cs));
         break;
@@ -219,8 +254,8 @@ internal class Parser
     var s = new MemoryStream(8);
     try
     {
-      byte? i = iter[0];
-      while (i is not null and
+      byte? i;
+      while ((i = PeekByte()) is not null and
       ((>= (byte)'0' and <= (byte)'9')
         or (byte)'-'
         or (byte)'+'
@@ -228,9 +263,7 @@ internal class Parser
         or (byte)'E'
         or (byte)'e'))
       {
-        s.WriteByte(i.Value);
-        iter.Index++;
-        i = iter[0];
+        s.WriteByte(NextByte()!.Value);
       }
       return Convert.ToDouble(Encoding.UTF8.GetString(s.ToArray()));
     }

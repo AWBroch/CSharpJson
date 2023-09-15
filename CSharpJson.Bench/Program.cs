@@ -2,6 +2,6 @@
 
 string jsonFile = args[0];
 
-var json = await File.ReadAllBytesAsync(jsonFile);
+var json = File.ReadAllBytes(jsonFile);
 
 JsonDocument.DecodeRaw(json);
