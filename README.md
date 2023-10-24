@@ -19,3 +19,5 @@ A simple JSON parser in C#
 | tests/random.json        | CSharpJson       | 1.277       | 284032      |
 | tests/random.json        | System.Text.Json | 0.504       | 192976      |
 | tests/random.json        | Newtonsoft       | 1.255       | 598576      |
+
+A [Broch Web Solutions](https://www.brochweb.com/) project.
